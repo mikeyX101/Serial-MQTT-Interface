@@ -3,6 +3,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
+using SerialMQTTInterface.Extensions;
 using System.Threading.Tasks;
 
 namespace SerialMQTTInterface.IO.MQTT
@@ -19,6 +20,7 @@ namespace SerialMQTTInterface.IO.MQTT
 		{
 			Client = new MqttFactory().CreateMqttClient();
 			Client.UseApplicationMessageReceivedHandler(OnMessageReceived);
+			Client.UseConnectedHandler(OnConnected);
 			Client.UseDisconnectedHandler(OnDisconnect);
 
 			ConnectOptions = new MqttClientOptionsBuilder()
@@ -50,14 +52,29 @@ namespace SerialMQTTInterface.IO.MQTT
 			}
 			catch (System.Exception e)
 			{
-				Console.Print(SourceName, $"An exception occured while publishing a message.", e);
+				Console.Print(SourceName, $"An exception occured while executing an MQTT command.", e);
 			}
 			
 		}
 
 		private static /*async Task*/ void OnMessageReceived(MqttApplicationMessageReceivedEventArgs e)
 		{
-			Console.Print(SourceName, $"Received message with topic {e.ApplicationMessage.Topic}");
+			Console.Print(SourceName, $"Received message with topic {e.ApplicationMessage.Topic} and payload {e.ApplicationMessage.PayloadToUTF8String()}");
+
+			Serial.Write(e.ApplicationMessage.ToSerialString());
+		}
+
+		private static async void OnConnected(MqttClientConnectedEventArgs e)
+		{
+			await Client.SubscribeAsync(new MqttTopicFilterBuilder()
+				.WithTopic("alarmState")
+				.Build()
+			);
+
+			await Client.SubscribeAsync(new MqttTopicFilterBuilder()
+				.WithTopic("systemState")
+				.Build()
+			);
 		}
 
 		private static async Task OnDisconnect(MqttClientDisconnectedEventArgs e)

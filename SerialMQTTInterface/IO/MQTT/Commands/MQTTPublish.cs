@@ -5,13 +5,8 @@ namespace SerialMQTTInterface.IO.MQTT.Commands
 {
 	internal sealed class MQTTPublish : MQTTCommand
 	{
-		public override string ExecutionMessage
-		{
-			get
-			{
-				return $"Publishing payload \"{Payload}\" with topic \"{Topic}\". Message is {(!Retained ? "not " : "")}retained.";
-			}
-		}
+		public override string ExecutionMessage => $"Publishing payload \"{Payload}\" with topic \"{Topic}\". Message is {(!Retained ? "not " : "")}retained.";
+
 		public static string CommandName => "!mqtt_publish";
 
 		internal string Topic { get; set; }

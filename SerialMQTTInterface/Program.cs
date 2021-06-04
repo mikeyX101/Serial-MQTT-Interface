@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 
 namespace SerialMQTTInterface
 {
@@ -9,7 +8,7 @@ namespace SerialMQTTInterface
 		public static void Main(string[] args)
 		{
 			// Args: uint comPortNumber, int baudRate, string mqttServerIp
-			if (uint.TryParse(args[0], out uint comPortNumber) && int.TryParse(args[1], out int baudRate) && IPAddress.TryParse(args[2], out IPAddress ipAddress))
+			if (args.Length >= 3 && uint.TryParse(args[0], out uint comPortNumber) && int.TryParse(args[1], out int baudRate) && IPAddress.TryParse(args[2], out IPAddress ipAddress))
 			{
 				IO.MQTT.MQTT.Initialize(ipAddress);
 				IO.Serial.ReadPort(comPortNumber, baudRate);
@@ -17,6 +16,7 @@ namespace SerialMQTTInterface
 			else
 			{
 				IO.Console.Print("App", "Invalid Args. Usage: SerialMQTTInterface.exe <COMPortNumber> <BaudRate> <MQTTServerIp>");
+				System.Environment.Exit(1);
 			}
 		}
 	}

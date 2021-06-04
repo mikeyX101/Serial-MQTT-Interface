@@ -1,6 +1,6 @@
-﻿using System.IO.Ports;
+﻿using SerialMQTTInterface.IO.MQTT.Commands;
+using System.IO.Ports;
 using System.Threading;
-using SerialMQTTInterface.IO.MQTT.Commands;
 
 namespace SerialMQTTInterface.IO
 {
@@ -81,6 +81,11 @@ namespace SerialMQTTInterface.IO
 					}
 				}
 			}
+		}
+
+		public static void Write(string message)
+		{
+			Port.WriteLine(message);
 		}
 	}
 }
