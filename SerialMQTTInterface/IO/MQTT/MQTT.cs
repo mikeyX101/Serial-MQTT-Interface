@@ -4,6 +4,8 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
 using SerialMQTTInterface.Extensions;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 
 namespace SerialMQTTInterface.IO.MQTT
@@ -66,15 +68,14 @@ namespace SerialMQTTInterface.IO.MQTT
 
 		private static async void OnConnected(MqttClientConnectedEventArgs e)
 		{
-			await Client.SubscribeAsync(new MqttTopicFilterBuilder()
-				.WithTopic("alarmState")
-				.Build()
-			);
-
-			await Client.SubscribeAsync(new MqttTopicFilterBuilder()
-				.WithTopic("systemState")
-				.Build()
-			);
+			NameValueCollection topics = System.Configuration.ConfigurationManager.GetSection("subscribeToTopics") as NameValueCollection;
+			foreach(string topic in topics)
+			{
+				await Client.SubscribeAsync(new MqttTopicFilterBuilder()
+					.WithTopic(topics[topic])
+					.Build()
+				);
+			}
 		}
 
 		private static async Task OnDisconnect(MqttClientDisconnectedEventArgs e)
