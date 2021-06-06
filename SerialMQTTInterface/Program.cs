@@ -1,5 +1,5 @@
-﻿using System.Net;
-using System.Configuration;
+﻿using System.Configuration;
+using System.Net;
 
 namespace SerialMQTTInterface
 {
@@ -10,14 +10,36 @@ namespace SerialMQTTInterface
 		{
 			try
 			{
-				string comPort = ConfigurationManager.AppSettings["comPort"];
-				string baud = ConfigurationManager.AppSettings["baudRate"];
 				string mqttServer = ConfigurationManager.AppSettings["mqttServer"];
+				string mqttUseTls = ConfigurationManager.AppSettings["mqttUseTls"];
+				string mqttAllowUntrustedCerts = ConfigurationManager.AppSettings["mqttAllowUntrustedCerts"];
+				string mqttClientId = ConfigurationManager.AppSettings["mqttClientId"];
+				string mqttUsername = ConfigurationManager.AppSettings["mqttUsername"];
+				string mqttPassword = ConfigurationManager.AppSettings["mqttPassword"];
 
-				if (uint.TryParse(comPort, out uint comPortNumber) && int.TryParse(baud, out int baudRate) && IPAddress.TryParse(mqttServer, out IPAddress ipAddress))
+				string comPort = ConfigurationManager.AppSettings["comPort"];
+				string baudRate = ConfigurationManager.AppSettings["baudRate"];
+				
+
+				if (
+					IPAddress.TryParse(mqttServer, out IPAddress ipAddress) &&
+					bool.TryParse(mqttUseTls, out bool useTls) &&
+					bool.TryParse(mqttAllowUntrustedCerts, out bool allowUntrustedCerts) &&
+					mqttClientId != null &&
+
+					uint.TryParse(comPort, out uint comPortNumber) && 
+					int.TryParse(baudRate, out int baud)
+				)
 				{
-					IO.MQTT.MQTT.Initialize(ipAddress);
-					IO.Serial.ReadPort(comPortNumber, baudRate);
+					IO.MQTT.MQTT.Initialize(new IO.MQTT.MQTT.MQTTInitializeOptions(
+							ipAddress,
+							useTls,
+							allowUntrustedCerts,
+							mqttClientId,
+							mqttUsername,
+							mqttPassword
+					));
+					IO.Serial.ReadPort(comPortNumber, baud);
 				}
 				else
 				{

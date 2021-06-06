@@ -4,7 +4,6 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
 using SerialMQTTInterface.Extensions;
-using System.Collections;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 
@@ -12,31 +11,74 @@ namespace SerialMQTTInterface.IO.MQTT
 {
 	internal static class MQTT
 	{
+		internal class MQTTInitializeOptions
+		{
+			public MQTTInitializeOptions(System.Net.IPAddress serverIp, bool useTls, bool allowUntrustedCerts, string clientId, string username, string password)
+			{
+				ServerIp = serverIp;
+				UseTls = useTls;
+				AllowUntrustedCerts = allowUntrustedCerts;
+				ClientId = clientId;
+				Username = username;
+				Password = password;
+			}
+
+			public System.Net.IPAddress ServerIp { get; private set; }
+			public bool UseTls { get; private set; }
+			public bool AllowUntrustedCerts { get; private set; }
+			public string ClientId { get; private set; }
+			public string Username { get; private set; }
+			public string Password { get; private set; }
+		}
+
 		private static string SourceName => "MQTT";
 
 		private static IMqttClientOptions ConnectOptions { get; set; }
 
 		private static IMqttClient Client { get; set; }
 
-		public static async void Initialize(System.Net.IPAddress serverIp)
+		public static async void Initialize(MQTTInitializeOptions options)
 		{
+			if (options == null)
+			{
+				throw new System.ArgumentNullException(nameof(options));
+			}
+
 			Client = new MqttFactory().CreateMqttClient();
 			Client.UseApplicationMessageReceivedHandler(OnMessageReceived);
 			Client.UseConnectedHandler(OnConnected);
 			Client.UseDisconnectedHandler(OnDisconnect);
 
-			ConnectOptions = new MqttClientOptionsBuilder()
-				.WithClientId("AlarmSystem")
-				.WithTcpServer(serverIp.ToString())
-				.Build();
+			MqttClientOptionsBuilder mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
+				.WithClientId(options.ClientId)
+				.WithTcpServer(options.ServerIp.ToString())
+				.WithCleanSession()
+				.WithTls(new MqttClientOptionsBuilderTlsParameters
+				{
+					UseTls = true,
+					SslProtocol = System.Security.Authentication.SslProtocols.Tls12,
 
-			Console.Print(SourceName, $"Connecting to {serverIp}...");
+					AllowUntrustedCertificates = true
+				});
+
+			if (!string.IsNullOrWhiteSpace(options.Username) && !string.IsNullOrWhiteSpace(options.Password))
+			{
+				Console.Print(SourceName, $"Using credentials for MQTT.");
+				mqttClientOptionsBuilder.WithCredentials(options.Username, options.Password);
+			}
+			else
+			{
+				Console.Print(SourceName, $"Not using credentials for MQTT.");
+			}
+
+			ConnectOptions = mqttClientOptionsBuilder.Build();
+			Console.Print(SourceName, $"Connecting to {options.ServerIp}...");
 			try
 			{
 				MqttClientAuthenticateResult result = await Client.ConnectAsync(ConnectOptions);
 				if (result.ResultCode == MqttClientConnectResultCode.Success)
 				{
-					Console.Print(SourceName, $"Connected to {serverIp}.");
+					Console.Print(SourceName, $"Connected to {options.ServerIp}.");
 				}
 			}
 			catch (System.Exception e)
