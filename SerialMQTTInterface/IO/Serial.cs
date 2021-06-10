@@ -1,6 +1,7 @@
 ﻿using SerialMQTTInterface.IO.MQTT.Commands;
 using System.IO.Ports;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SerialMQTTInterface.IO
 {
@@ -12,14 +13,14 @@ namespace SerialMQTTInterface.IO
 		private static bool CurrentlyReading { get; set; } = false;
 
 		// https://docs.microsoft.com/en-us/dotnet/api/system.io.ports.serialport.open
-		public static void ReadPort(uint comPort, int baudRate)
+		public static void ReadPort(uint comPort, int baudRate, bool reset)
 		{
 			SourceName = $"COM{comPort}";
 			Port = new(SourceName, baudRate);
-			Port.Encoding = System.Text.Encoding.UTF8;
+			Port.Encoding = System.Text.Encoding.Default;
 			// Set the read/write timeouts
 			Port.ReadTimeout = 500;
-			Port.WriteTimeout = 500;
+			Port.WriteTimeout = SerialPort.InfiniteTimeout;
 
 			while (!Port.IsOpen)
 			{
@@ -39,6 +40,18 @@ namespace SerialMQTTInterface.IO
 
 			ReadThread = new(Read);
 			ReadThread.Start();
+
+			if (reset)
+			{
+				Task.Run(() =>
+				{
+					Thread.Sleep(System.TimeSpan.FromSeconds(2));
+
+					string resetCommand = "!reset";
+					Console.Print(SourceName, $"Sending reset command: {resetCommand}");
+					Write(resetCommand);
+				});
+			}
 
 			CurrentlyReading = true;
 			while (CurrentlyReading)

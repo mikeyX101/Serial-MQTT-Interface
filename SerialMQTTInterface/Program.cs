@@ -19,7 +19,7 @@ namespace SerialMQTTInterface
 
 				string comPort = ConfigurationManager.AppSettings["comPort"];
 				string baudRate = ConfigurationManager.AppSettings["baudRate"];
-				
+				string sendResetOnStartup = ConfigurationManager.AppSettings["sendResetOnStartup"];
 
 				if (
 					IPAddress.TryParse(mqttServer, out IPAddress ipAddress) &&
@@ -28,7 +28,8 @@ namespace SerialMQTTInterface
 					mqttClientId != null &&
 
 					uint.TryParse(comPort, out uint comPortNumber) && 
-					int.TryParse(baudRate, out int baud)
+					int.TryParse(baudRate, out int baud) &&
+					bool.TryParse(sendResetOnStartup, out bool reset)
 				)
 				{
 					IO.MQTT.MQTT.Initialize(new IO.MQTT.MQTT.MQTTInitializeOptions(
@@ -39,7 +40,8 @@ namespace SerialMQTTInterface
 							mqttUsername,
 							mqttPassword
 					));
-					IO.Serial.ReadPort(comPortNumber, baud);
+
+					IO.Serial.ReadPort(comPortNumber, baud, reset);
 				}
 				else
 				{
