@@ -13,7 +13,7 @@ namespace SerialMQTTInterface.IO
 		private static bool CurrentlyReading { get; set; } = false;
 
 		// https://docs.microsoft.com/en-us/dotnet/api/system.io.ports.serialport.open
-		public static void ReadPort(uint comPort, int baudRate, bool reset)
+		public static void ReadPort(uint comPort, int baudRate)
 		{
 			SourceName = $"COM{comPort}";
 			Port = new(SourceName, baudRate);
@@ -40,18 +40,6 @@ namespace SerialMQTTInterface.IO
 
 			ReadThread = new(Read);
 			ReadThread.Start();
-
-			if (reset)
-			{
-				Task.Run(() =>
-				{
-					Thread.Sleep(System.TimeSpan.FromSeconds(2));
-
-					string resetCommand = "!reset";
-					Console.Print(SourceName, $"Sending reset command: {resetCommand}");
-					Write(resetCommand);
-				});
-			}
 
 			CurrentlyReading = true;
 			while (CurrentlyReading)
@@ -99,6 +87,18 @@ namespace SerialMQTTInterface.IO
 		public static void Write(string message)
 		{
 			Port.WriteLine(message);
+		}
+
+		public static async void Reset()
+		{
+			await Task.Run(() =>
+			{
+				Thread.Sleep(System.TimeSpan.FromSeconds(2));
+
+				string resetCommand = "!reset";
+				Console.Print(SourceName, $"Sending reset command: {resetCommand}");
+				Write(resetCommand);
+			});
 		}
 	}
 }

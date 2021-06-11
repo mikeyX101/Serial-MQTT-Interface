@@ -13,7 +13,7 @@ namespace SerialMQTTInterface.IO.MQTT
 	{
 		internal class MQTTInitializeOptions
 		{
-			public MQTTInitializeOptions(System.Net.IPAddress serverIp, bool useTls, bool allowUntrustedCerts, string clientId, string username, string password)
+			public MQTTInitializeOptions(System.Net.IPAddress serverIp, bool useTls, bool allowUntrustedCerts, string clientId, string username, string password, bool resetSerialOnFirstConnection)
 			{
 				ServerIp = serverIp;
 				UseTls = useTls;
@@ -21,6 +21,7 @@ namespace SerialMQTTInterface.IO.MQTT
 				ClientId = clientId;
 				Username = username;
 				Password = password;
+				ResetSerialOnFirstConnection = resetSerialOnFirstConnection;
 			}
 
 			public System.Net.IPAddress ServerIp { get; private set; }
@@ -29,6 +30,7 @@ namespace SerialMQTTInterface.IO.MQTT
 			public string ClientId { get; private set; }
 			public string Username { get; private set; }
 			public string Password { get; private set; }
+			public bool ResetSerialOnFirstConnection { get; private set; }
 		}
 
 		private static string SourceName => "MQTT";
@@ -37,12 +39,17 @@ namespace SerialMQTTInterface.IO.MQTT
 
 		private static IMqttClient Client { get; set; }
 
+		private static bool ResetSerialOnFirstConnection { get; set; }
+		private static bool SerialGotReset { get; set; } = false;
+
 		public static async void Initialize(MQTTInitializeOptions options)
 		{
 			if (options == null)
 			{
 				throw new System.ArgumentNullException(nameof(options));
 			}
+
+			ResetSerialOnFirstConnection = options.ResetSerialOnFirstConnection;
 
 			Client = new MqttFactory().CreateMqttClient();
 			Client.UseApplicationMessageReceivedHandler(OnMessageReceived);
@@ -117,6 +124,12 @@ namespace SerialMQTTInterface.IO.MQTT
 					.WithTopic(topics[topic])
 					.Build()
 				);
+			}
+
+			if (ResetSerialOnFirstConnection && !SerialGotReset)
+			{
+				Serial.Reset();
+				SerialGotReset = true;
 			}
 		}
 
